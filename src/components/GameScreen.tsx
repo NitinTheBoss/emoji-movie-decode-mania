@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Industry, Mode, GameState } from '../pages/Index';
-import { home } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 interface GameScreenProps {
   industry: Industry;
   mode: Mode;
   gameState: GameState;
-  onGameComplete: (isCorrect: boolean, movie: any) => void;
+  onGameComplete: (isCorrect: boolean, movie: any, timeTaken: number) => void;
   onGuess: (guess: string) => void;
   onBack: () => void;
 }
@@ -23,6 +23,8 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
   const [guess, setGuess] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [hintIndex, setHintIndex] = useState(0);
+  const [startTime, setStartTime] = useState<number>(Date.now());
+  const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
 
   // Sample movie data (in a real app, this would come from an API)
   const movieData: Record<Industry, Movie[]> = {
@@ -52,6 +54,10 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
       const movies = movieData[industry];
       const randomMovie = movies[Math.floor(Math.random() * movies.length)];
       setCurrentMovie(randomMovie);
+      setStartTime(Date.now());
+      setWrongGuesses([]);
+      setShowHint(false);
+      setHintIndex(0);
     }
   }, [industry, currentMovie]);
 
@@ -63,8 +69,17 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
     
     const isCorrect = guess.toLowerCase().trim() === currentMovie.title.toLowerCase();
     
-    if (isCorrect || gameState.guesses.length >= 2) { // Max 3 attempts (including current)
-      onGameComplete(isCorrect, currentMovie);
+    if (isCorrect) {
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+      onGameComplete(isCorrect, currentMovie, timeTaken);
+    } else {
+      setWrongGuesses(prev => [...prev, guess]);
+      setShowHint(true);
+      
+      if (gameState.guesses.length >= 2) { // Max 3 attempts (including current)
+        const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+        onGameComplete(false, currentMovie, timeTaken);
+      }
     }
     
     setGuess('');
@@ -72,15 +87,8 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
 
   const handleSkip = () => {
     if (currentMovie) {
-      onGameComplete(false, currentMovie);
-    }
-  };
-
-  const handleHint = () => {
-    if (!showHint) {
-      setShowHint(true);
-    } else if (hintIndex < (currentMovie?.hints.length || 0) - 1) {
-      setHintIndex(prev => prev + 1);
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+      onGameComplete(false, currentMovie, timeTaken);
     }
   };
 
@@ -88,13 +96,15 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
     return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
   }
 
+  const emojiArray = currentMovie.emojis.split('');
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <button
         onClick={onBack}
         className="absolute top-6 left-6 text-white/80 hover:text-white transition-colors duration-200"
       >
-        <home size={24} />
+        <Home size={24} />
       </button>
 
       <div className="text-center mb-8 animate-fade-in">
@@ -105,8 +115,19 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
       </div>
 
       <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full text-center animate-scale-in">
-        <div className="text-6xl mb-6 animate-pulse">
-          {currentMovie.emojis}
+        <div className="text-6xl mb-6 flex justify-center gap-1">
+          {emojiArray.map((emoji, index) => (
+            <span
+              key={index}
+              className="animate-pulse"
+              style={{ 
+                animationDelay: `${index * 0.2}s`,
+                animationDuration: '1s'
+              }}
+            >
+              {emoji}
+            </span>
+          ))}
         </div>
 
         {showHint && (
@@ -137,14 +158,6 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
             
             <button
               type="button"
-              onClick={handleHint}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-6 rounded-xl font-semibold transition-colors duration-200"
-            >
-              Hint
-            </button>
-            
-            <button
-              type="button"
               onClick={handleSkip}
               className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-xl font-semibold transition-colors duration-200"
             >
@@ -153,10 +166,10 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
           </div>
         </form>
 
-        {gameState.guesses.length > 0 && (
+        {wrongGuesses.length > 0 && (
           <div className="mt-6 space-y-2">
             <p className="text-white/80 text-sm">Previous guesses:</p>
-            {gameState.guesses.map((prevGuess, index) => (
+            {wrongGuesses.map((prevGuess, index) => (
               <div key={index} className="text-white/60 text-sm bg-white/10 rounded-lg p-2">
                 {prevGuess}
               </div>

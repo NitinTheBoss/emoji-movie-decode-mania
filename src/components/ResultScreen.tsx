@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Industry, Mode } from '../pages/Index';
-import { share } from 'lucide-react';
+import { Share } from 'lucide-react';
 
 interface ResultScreenProps {
   industry: Industry;
@@ -9,11 +9,12 @@ interface ResultScreenProps {
   isCorrect: boolean;
   movie: any;
   attempts: number;
+  timeTaken: number;
   onPlayAgain: () => void;
   onHome: () => void;
 }
 
-const ResultScreen = ({ industry, mode, isCorrect, movie, attempts, onPlayAgain, onHome }: ResultScreenProps) => {
+const ResultScreen = ({ industry, mode, isCorrect, movie, attempts, timeTaken, onPlayAgain, onHome }: ResultScreenProps) => {
   const industryNames = {
     hollywood: 'Hollywood',
     bollywood: 'Bollywood',
@@ -21,9 +22,16 @@ const ResultScreen = ({ industry, mode, isCorrect, movie, attempts, onPlayAgain,
     kollywood: 'Kollywood'
   };
 
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
   const shareText = isCorrect 
     ? `🎬 Emoji Movie Guessing - ${mode === 'daily' ? 'Daily Challenge' : 'Infinite Mode'}
-I guessed today's ${industryNames[industry]} movie in ${attempts} tries!
+I guessed today's ${industryNames[industry]} movie in ${attempts} tries and ${formatTime(timeTaken)}!
 🧩 Clue: ${movie.emojis}
 Can you beat me?
 
@@ -31,7 +39,6 @@ Play now 👉 ${window.location.origin}`
     : `🎬 Emoji Movie Guessing - ${mode === 'daily' ? 'Daily Challenge' : 'Infinite Mode'}
 I couldn't guess today's ${industryNames[industry]} movie!
 🧩 Clue: ${movie.emojis}
-The answer was: ${movie.title}
 
 Can you do better? 👉 ${window.location.origin}`;
 
@@ -78,6 +85,9 @@ Can you do better? 👉 ${window.location.origin}`;
               <p className="text-white">
                 You guessed it in {attempts} {attempts === 1 ? 'try' : 'tries'}!
               </p>
+              <p className="text-white/80 text-sm mt-2">
+                Time: {formatTime(timeTaken)}
+              </p>
             </div>
           ) : (
             <div>
@@ -121,7 +131,7 @@ Can you do better? 👉 ${window.location.origin}`;
                 onClick={() => handleShare()}
                 className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
               >
-                <share size={16} />
+                <Share size={16} />
                 Share
               </button>
               

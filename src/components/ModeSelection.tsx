@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Industry, Mode } from '../pages/Index';
-import { home } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 interface ModeSelectionProps {
   industry: Industry;
   onModeSelect: (mode: Mode) => void;
   onBack: () => void;
+  completedDaily?: boolean;
 }
 
-const ModeSelection = ({ industry, onModeSelect, onBack }: ModeSelectionProps) => {
+const ModeSelection = ({ industry, onModeSelect, onBack, completedDaily = false }: ModeSelectionProps) => {
   const industryNames = {
     hollywood: 'Hollywood',
     bollywood: 'Bollywood',
@@ -30,7 +31,7 @@ const ModeSelection = ({ industry, onModeSelect, onBack }: ModeSelectionProps) =
         onClick={onBack}
         className="absolute top-6 left-6 text-white/80 hover:text-white transition-colors duration-200"
       >
-        <home size={24} />
+        <Home size={24} />
       </button>
 
       <div className="text-center mb-12 animate-fade-in">
@@ -43,22 +44,36 @@ const ModeSelection = ({ industry, onModeSelect, onBack }: ModeSelectionProps) =
       </div>
 
       <div className="space-y-6 max-w-md w-full">
-        <button
-          onClick={() => onModeSelect('daily')}
-          className="
-            w-full bg-gradient-to-r from-purple-500 to-pink-600 
-            text-white p-8 rounded-2xl shadow-2xl
-            transform transition-all duration-300 
-            hover:scale-105 hover:shadow-3xl
-            animate-fade-in
-          "
-        >
-          <div className="text-4xl mb-4">📆</div>
-          <div className="text-2xl font-bold mb-2">Daily Challenge</div>
-          <div className="text-sm text-white/80">
-            A new emoji movie puzzle each day. One chance. Same for everyone.
-          </div>
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => !completedDaily && onModeSelect('daily')}
+            disabled={completedDaily}
+            className={`
+              w-full p-8 rounded-2xl shadow-2xl
+              transform transition-all duration-300 
+              animate-fade-in
+              ${completedDaily 
+                ? 'bg-gray-500/50 text-white/50 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:scale-105 hover:shadow-3xl'
+              }
+            `}
+            title={completedDaily ? 'Come back tomorrow' : undefined}
+          >
+            <div className="text-4xl mb-4">📆</div>
+            <div className="text-2xl font-bold mb-2">Daily Challenge</div>
+            <div className="text-sm text-white/80">
+              {completedDaily 
+                ? 'Come back tomorrow for a new challenge' 
+                : 'A new emoji movie puzzle each day. One chance. Same for everyone.'
+              }
+            </div>
+          </button>
+          {completedDaily && (
+            <div className="absolute inset-0 bg-black/30 rounded-2xl flex items-center justify-center">
+              <span className="text-white/80 text-lg font-semibold">Completed ✅</span>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={() => onModeSelect('infinite')}

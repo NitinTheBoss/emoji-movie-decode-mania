@@ -16,12 +16,15 @@ export interface GameState {
   guesses: string[];
   isCorrect?: boolean;
   gameOver?: boolean;
+  timeTaken?: number;
+  completedDailies: Set<Industry>;
 }
 
 const Index = () => {
   const [gameState, setGameState] = useState<GameState>({
     screen: 'home',
-    guesses: []
+    guesses: [],
+    completedDailies: new Set()
   });
 
   const updateGameState = (updates: Partial<GameState>) => {
@@ -29,14 +32,15 @@ const Index = () => {
   };
 
   const resetGame = () => {
-    setGameState({
+    setGameState(prev => ({
       screen: 'home',
-      guesses: []
-    });
+      guesses: [],
+      completedDailies: prev.completedDailies
+    }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800">
+    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-700">
       {gameState.screen === 'home' && (
         <HomeScreen onIndustrySelect={(industry) => 
           updateGameState({ selectedIndustry: industry, screen: 'mode' })
@@ -46,8 +50,9 @@ const Index = () => {
       {gameState.screen === 'mode' && (
         <ModeSelection 
           industry={gameState.selectedIndustry!}
+          completedDaily={gameState.completedDailies.has(gameState.selectedIndustry!)}
           onModeSelect={(mode) => 
-            updateGameState({ selectedMode: mode, screen: 'game' })
+            updateGameState({ selectedMode: mode, screen: 'game', guesses: [] })
           }
           onBack={() => updateGameState({ screen: 'home' })}
         />
@@ -58,14 +63,20 @@ const Index = () => {
           industry={gameState.selectedIndustry!}
           mode={gameState.selectedMode!}
           gameState={gameState}
-          onGameComplete={(isCorrect, movie) => 
+          onGameComplete={(isCorrect, movie, timeTaken) => {
+            const newCompletedDailies = new Set(gameState.completedDailies);
+            if (gameState.selectedMode === 'daily') {
+              newCompletedDailies.add(gameState.selectedIndustry!);
+            }
             updateGameState({ 
               screen: 'result', 
               isCorrect, 
               currentMovie: movie,
-              gameOver: true 
-            })
-          }
+              gameOver: true,
+              timeTaken,
+              completedDailies: newCompletedDailies
+            });
+          }}
           onGuess={(guess) => 
             updateGameState({ 
               guesses: [...gameState.guesses, guess] 
@@ -82,6 +93,7 @@ const Index = () => {
           isCorrect={gameState.isCorrect!}
           movie={gameState.currentMovie}
           attempts={gameState.guesses.length}
+          timeTaken={gameState.timeTaken || 0}
           onPlayAgain={() => {
             if (gameState.selectedMode === 'infinite') {
               updateGameState({ 
