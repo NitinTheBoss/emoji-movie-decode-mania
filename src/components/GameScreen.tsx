@@ -21,10 +21,8 @@ interface Movie {
 const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack }: GameScreenProps) => {
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
   const [guess, setGuess] = useState('');
-  const [showHint, setShowHint] = useState(false);
-  const [hintIndex, setHintIndex] = useState(0);
+  const [currentHintIndex, setCurrentHintIndex] = useState(-1);
   const [startTime, setStartTime] = useState<number>(Date.now());
-  const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
 
   // Sample movie data (in a real app, this would come from an API)
   const movieData: Record<Industry, Movie[]> = {
@@ -55,9 +53,7 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
       const randomMovie = movies[Math.floor(Math.random() * movies.length)];
       setCurrentMovie(randomMovie);
       setStartTime(Date.now());
-      setWrongGuesses([]);
-      setShowHint(false);
-      setHintIndex(0);
+      setCurrentHintIndex(-1);
     }
   }, [industry, currentMovie]);
 
@@ -73,10 +69,10 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
       onGameComplete(isCorrect, currentMovie, timeTaken);
     } else {
-      setWrongGuesses(prev => [...prev, guess]);
-      setShowHint(true);
+      const newHintIndex = currentHintIndex + 1;
+      setCurrentHintIndex(newHintIndex);
       
-      if (gameState.guesses.length >= 2) { // Max 3 attempts (including current)
+      if (gameState.guesses.length >= 4) { // Max 5 attempts (including current)
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
         onGameComplete(false, currentMovie, timeTaken);
       }
@@ -85,92 +81,80 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
     setGuess('');
   };
 
-  const handleSkip = () => {
-    if (currentMovie) {
-      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-      onGameComplete(false, currentMovie, timeTaken);
-    }
-  };
-
   if (!currentMovie) {
     return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
   }
 
   const emojiArray = currentMovie.emojis.split('');
+  const shouldShowAllHints = gameState.guesses.length >= 4;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-white/80 hover:text-white transition-colors duration-200"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 text-white/80 hover:text-white transition-colors duration-200"
       >
-        <Home size={24} />
+        <Home size={20} className="sm:w-6 sm:h-6" />
       </button>
 
-      <div className="text-center mb-8 animate-fade-in">
-        <h2 className="text-2xl text-white/80 mb-4">
+      <div className="text-center mb-6 sm:mb-8 animate-fade-in">
+        <h2 className="text-lg sm:text-2xl text-white/80 mb-2 sm:mb-4">
           {mode === 'daily' ? '📆 Daily Challenge' : '♾️ Infinite Mode'}
         </h2>
-        <p className="text-white/60">Attempt {gameState.guesses.length + 1} of 3</p>
+        <p className="text-sm sm:text-base text-white/60">Attempt {gameState.guesses.length + 1} of 5</p>
       </div>
 
-      <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full text-center animate-scale-in">
-        <div className="text-6xl mb-6 flex justify-center gap-1">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full text-center animate-scale-in">
+        <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 flex justify-center gap-1">
           {emojiArray.map((emoji, index) => (
-            <span
-              key={index}
-              className="animate-pulse"
-              style={{ 
-                animationDelay: `${index * 0.2}s`,
-                animationDuration: '1s'
-              }}
-            >
+            <span key={index}>
               {emoji}
             </span>
           ))}
         </div>
 
-        {showHint && (
-          <div className="mb-6 p-4 bg-yellow-500/20 rounded-lg animate-fade-in">
-            <p className="text-yellow-200 text-sm">
-              💡 Hint: {currentMovie.hints[hintIndex]}
+        {currentHintIndex >= 0 && !shouldShowAllHints && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-500/20 rounded-lg animate-fade-in">
+            <p className="text-yellow-200 text-xs sm:text-sm">
+              💡 Hint {currentHintIndex + 1}: {currentMovie.hints[currentHintIndex]}
             </p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {shouldShowAllHints && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-500/20 rounded-lg animate-fade-in">
+            <p className="text-red-200 text-xs sm:text-sm mb-2">💡 All Hints:</p>
+            {currentMovie.hints.map((hint, index) => (
+              <p key={index} className="text-red-200 text-xs sm:text-sm">
+                {index + 1}. {hint}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <input
             type="text"
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             placeholder="Your Guess?"
-            className="w-full p-4 rounded-xl bg-white/20 text-white placeholder-white/60 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none"
+            className="w-full p-3 sm:p-4 rounded-xl bg-white/20 text-white placeholder-white/60 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none text-sm sm:text-base"
           />
           
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={!guess.trim()}
-              className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white py-3 px-6 rounded-xl font-semibold transition-colors duration-200"
-            >
-              Submit
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-xl font-semibold transition-colors duration-200"
-            >
-              Skip
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={!guess.trim()}
+            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl font-semibold transition-colors duration-200 text-sm sm:text-base"
+          >
+            Submit
+          </button>
         </form>
 
-        {wrongGuesses.length > 0 && (
-          <div className="mt-6 space-y-2">
-            <p className="text-white/80 text-sm">Previous guesses:</p>
-            {wrongGuesses.map((prevGuess, index) => (
-              <div key={index} className="text-white/60 text-sm bg-white/10 rounded-lg p-2">
+        {gameState.guesses.length > 0 && (
+          <div className="mt-4 sm:mt-6 space-y-2">
+            <p className="text-white/80 text-xs sm:text-sm">Previous guesses:</p>
+            {gameState.guesses.map((prevGuess, index) => (
+              <div key={index} className="text-white/60 text-xs sm:text-sm bg-white/10 rounded-lg p-2">
                 {prevGuess}
               </div>
             ))}

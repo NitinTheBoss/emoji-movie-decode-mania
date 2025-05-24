@@ -35,12 +35,15 @@ const Index = () => {
     setGameState(prev => ({
       screen: 'home',
       guesses: [],
-      completedDailies: prev.completedDailies
+      completedDailies: prev.completedDailies,
+      isCorrect: undefined,
+      gameOver: false,
+      currentMovie: undefined
     }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-700">
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-blue-400 to-indigo-600">
       {gameState.screen === 'home' && (
         <HomeScreen onIndustrySelect={(industry) => 
           updateGameState({ selectedIndustry: industry, screen: 'mode' })
@@ -52,7 +55,14 @@ const Index = () => {
           industry={gameState.selectedIndustry!}
           completedDaily={gameState.completedDailies.has(gameState.selectedIndustry!)}
           onModeSelect={(mode) => 
-            updateGameState({ selectedMode: mode, screen: 'game', guesses: [] })
+            updateGameState({ 
+              selectedMode: mode, 
+              screen: 'game', 
+              guesses: [],
+              isCorrect: undefined,
+              gameOver: false,
+              currentMovie: undefined
+            })
           }
           onBack={() => updateGameState({ screen: 'home' })}
         />
