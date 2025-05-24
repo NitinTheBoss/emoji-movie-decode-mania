@@ -43,7 +43,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-blue-400 to-indigo-600">
+    <div className="min-h-screen bg-gradient-to-br from-purple-300 via-blue-300 to-indigo-500">
       {gameState.screen === 'home' && (
         <HomeScreen onIndustrySelect={(industry) => 
           updateGameState({ selectedIndustry: industry, screen: 'mode' })

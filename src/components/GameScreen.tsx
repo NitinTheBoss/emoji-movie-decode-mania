@@ -48,14 +48,16 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
   };
 
   useEffect(() => {
-    if (!currentMovie) {
+    if (!gameState.currentMovie) {
       const movies = movieData[industry];
       const randomMovie = movies[Math.floor(Math.random() * movies.length)];
       setCurrentMovie(randomMovie);
       setStartTime(Date.now());
       setCurrentHintIndex(-1);
+    } else {
+      setCurrentMovie(gameState.currentMovie);
     }
-  }, [industry, currentMovie]);
+  }, [industry, gameState.currentMovie]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +71,7 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
       onGameComplete(isCorrect, currentMovie, timeTaken);
     } else {
-      const newHintIndex = currentHintIndex + 1;
+      const newHintIndex = Math.min(currentHintIndex + 1, 2);
       setCurrentHintIndex(newHintIndex);
       
       if (gameState.guesses.length >= 4) { // Max 5 attempts (including current)
@@ -85,7 +87,6 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
     return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
   }
 
-  const emojiArray = currentMovie.emojis.split('');
   const shouldShowAllHints = gameState.guesses.length >= 4;
 
   return (
@@ -97,24 +98,20 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
         <Home size={20} className="sm:w-6 sm:h-6" />
       </button>
 
-      <div className="text-center mb-6 sm:mb-8 animate-fade-in">
-        <h2 className="text-lg sm:text-2xl text-white/80 mb-2 sm:mb-4">
+      <div className="text-center mb-4 sm:mb-6 animate-fade-in">
+        <h2 className="text-lg sm:text-xl text-white/80 mb-2">
           {mode === 'daily' ? '📆 Daily Challenge' : '♾️ Infinite Mode'}
         </h2>
-        <p className="text-sm sm:text-base text-white/60">Attempt {gameState.guesses.length + 1} of 5</p>
+        <p className="text-sm text-white/60">Attempt {gameState.guesses.length + 1} of 5</p>
       </div>
 
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full text-center animate-scale-in">
-        <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 flex justify-center gap-1">
-          {emojiArray.map((emoji, index) => (
-            <span key={index}>
-              {emoji}
-            </span>
-          ))}
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 sm:p-6 max-w-xs sm:max-w-sm w-full text-center animate-scale-in">
+        <div className="text-3xl sm:text-5xl mb-4 flex justify-center gap-1">
+          {currentMovie.emojis}
         </div>
 
         {currentHintIndex >= 0 && !shouldShowAllHints && (
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-500/20 rounded-lg animate-fade-in">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-yellow-500/20 rounded-lg animate-fade-in">
             <p className="text-yellow-200 text-xs sm:text-sm">
               💡 Hint {currentHintIndex + 1}: {currentMovie.hints[currentHintIndex]}
             </p>
@@ -122,7 +119,7 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
         )}
 
         {shouldShowAllHints && (
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-500/20 rounded-lg animate-fade-in">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/20 rounded-lg animate-fade-in">
             <p className="text-red-200 text-xs sm:text-sm mb-2">💡 All Hints:</p>
             {currentMovie.hints.map((hint, index) => (
               <p key={index} className="text-red-200 text-xs sm:text-sm">
@@ -132,26 +129,26 @@ const GameScreen = ({ industry, mode, gameState, onGameComplete, onGuess, onBack
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="text"
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             placeholder="Your Guess?"
-            className="w-full p-3 sm:p-4 rounded-xl bg-white/20 text-white placeholder-white/60 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none text-sm sm:text-base"
+            className="w-full p-2 sm:p-3 rounded-xl bg-white/20 text-white placeholder-white/60 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none text-sm sm:text-base"
           />
           
           <button
             type="submit"
             disabled={!guess.trim()}
-            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl font-semibold transition-colors duration-200 text-sm sm:text-base"
+            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl font-semibold transition-colors duration-200 text-sm sm:text-base"
           >
             Submit
           </button>
         </form>
 
         {gameState.guesses.length > 0 && (
-          <div className="mt-4 sm:mt-6 space-y-2">
+          <div className="mt-3 sm:mt-4 space-y-2">
             <p className="text-white/80 text-xs sm:text-sm">Previous guesses:</p>
             {gameState.guesses.map((prevGuess, index) => (
               <div key={index} className="text-white/60 text-xs sm:text-sm bg-white/10 rounded-lg p-2">
